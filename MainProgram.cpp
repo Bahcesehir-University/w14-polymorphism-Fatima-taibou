@@ -12,6 +12,8 @@
 #include <vector>
 #include <cmath>
 
+const double PI = 3.14159265358979323846;
+
 // ================================
 // CLASS DEFINITIONS
 // ================================
@@ -56,7 +58,7 @@ public:
     // TODO 3: Override area().  Area of a circle = PI * r * r.
     //         Use override.
     double area() const override {
-        return M_PI * radius * radius;
+        return PI * radius * radius;
     }
 };
 
