@@ -1,102 +1,143 @@
 // ============================================================
-// test.cpp  —  Catch2 tests for Inheritance & Polymorphism lab
+// MainProgram.cpp  —  STUDENT VERSION
+// Lab: Inheritance and Polymorphism
+// Standard: C++17  |  Single file only, no headers
+// ------------------------------------------------------------
+// Complete every TODO. Do NOT rename classes, methods, or
+// functions: the autograder depends on these exact names.
 // ============================================================
-// Tag-based grouping enables partial credit:
-//   ./test_bin [t1] ... [t6]   (Linux autograder)
-//   make test_1 ... make test_6
-// ============================================================
 
-#define CATCH_CONFIG_MAIN
-#include "catch_amalgamated.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cmath>
 
-// Pull in the student's implementation. Rename their main to avoid clash.
-#define main student_main
-#include "MainProgram.cpp"
-#undef main
+const double PI = 3.14159265358979323846;
 
-// ------------------------------------------------------------
-// [t1] Circle::area  (normal + boundary)
-// ------------------------------------------------------------
-TEST_CASE("Circle area is computed correctly", "[t1]") {
-    Circle c(2.0);
-    REQUIRE(c.area() == Catch::Approx(12.56637061).epsilon(0.0001));
+// ================================
+// CLASS DEFINITIONS
+// ================================
 
-    Circle unit(1.0);
-    REQUIRE(unit.area() == Catch::Approx(3.14159265).epsilon(0.0001));
+// --- Base class -------------------------------------------------
+class Shape {
+protected:
+    std::string name;
 
-    Circle zero(0.0);
-    REQUIRE(zero.area() == Catch::Approx(0.0));
+public:
+    Shape(const std::string& n) : name(n) {}
+
+    // TODO 1: Make this destructor VIRTUAL.
+    //         (Add the 'virtual' keyword in front.)
+    //         A virtual destructor is required for safe deletion
+    //         through a Shape* pointer.
+    virtual ~Shape() {}
+
+    // Pure virtual: Shape is abstract and cannot be instantiated.
+    // Each derived class MUST override area(). (Leave this line.)
+    virtual double area() const = 0;
+
+    // describe() is virtual with a default body — leave as is.
+    virtual std::string describe() const {
+        return name + " with area " + std::to_string(area());
+    }
+
+    std::string getName() const { return name; }
+};
+
+// --- Derived class: Circle --------------------------------------
+class Circle : public Shape {
+private:
+    double radius;
+
+public:
+    // TODO 2: Write the constructor.
+    //   - Call the Shape base constructor with the name "Circle".
+    //   - Store the radius.
+    Circle(double r) : Shape("Circle"), radius(r) {}
+
+    // TODO 3: Override area().  Area of a circle = PI * r * r.
+    //         Use override.
+    double area() const override {
+        return PI * radius * radius;
+    }
+};
+
+// --- Derived class: Rectangle -----------------------------------
+class Rectangle : public Shape {
+protected:
+    double width;
+    double height;
+
+public:
+    // TODO 4: Write the constructor.
+    //   - Call Shape with the name "Rectangle".
+    //   - Store width and height.
+    Rectangle(double w, double h) : Shape("Rectangle"), width(w), height(h) {}
+
+    // TODO 5: Override area().  Area of a rectangle = width * height.
+    double area() const override {
+        return width * height;
+    }
+};
+
+// --- Derived class: Square (inherits from Rectangle) ------------
+class Square : public Rectangle {
+public:
+    // TODO 6: Write the constructor.
+    //   - A square is a rectangle whose width == height == side.
+    //   - Call the Rectangle constructor with (side, side).
+    //   - Then set name = "Square".
+    Square(double side) : Rectangle(side, side) {
+        name = "Square";
+    }
+    // Note: Square reuses Rectangle::area() — no need to rewrite it.
+};
+
+// ================================
+// FUNCTION IMPLEMENTATIONS
+// ================================
+
+// TODO 7: Sum the area() of every shape in the vector.
+//         Must work polymorphically (through Shape*).
+//         An empty vector returns 0.0.
+double totalArea(const std::vector<Shape*>& shapes) {
+    double total = 0.0;
+    for (const Shape* s : shapes) {
+        total += s->area();
+    }
+    return total;
 }
 
-// ------------------------------------------------------------
-// [t2] Rectangle::area  (normal + boundary)
-// ------------------------------------------------------------
-TEST_CASE("Rectangle area is computed correctly", "[t2]") {
-    Rectangle r(3.0, 4.0);
-    REQUIRE(r.area() == Catch::Approx(12.0));
+// TODO 8: Return getName() of the shape with the LARGEST area.
+//         If the vector is empty, return "".
+std::string largestShapeName(const std::vector<Shape*>& shapes) {
+    if (shapes.empty()) return "";
 
-    Rectangle thin(0.0, 10.0);
-    REQUIRE(thin.area() == Catch::Approx(0.0));
-
-    Rectangle big(100.0, 100.0);
-    REQUIRE(big.area() == Catch::Approx(10000.0));
+    Shape* largest = shapes[0];
+    for (size_t i = 1; i < shapes.size(); ++i) {
+        if (shapes[i]->area() > largest->area()) {
+            largest = shapes[i];
+        }
+    }
+    return largest->getName();
 }
 
-// ------------------------------------------------------------
-// [t3] Square via inheritance from Rectangle
-// ------------------------------------------------------------
-TEST_CASE("Square inherits Rectangle and computes area", "[t3]") {
-    Square s(5.0);
-    REQUIRE(s.area() == Catch::Approx(25.0));
-    REQUIRE(s.getName() == "Square");
+// ================================
+// MAIN
+// ================================
+int main() {
+    std::vector<Shape*> shapes;
+    shapes.push_back(new Circle(2.0));
+    shapes.push_back(new Rectangle(3.0, 4.0));
+    shapes.push_back(new Square(5.0));
 
-    // A Square IS-A Shape: must bind to a base pointer.
-    Shape* sp = new Square(3.0);
-    REQUIRE(sp->area() == Catch::Approx(9.0));
-    delete sp;
-}
+    for (const Shape* s : shapes) {
+        std::cout << s->describe() << std::endl;
+    }
 
-// ------------------------------------------------------------
-// [t4] Polymorphism: dynamic dispatch through Shape*
-// ------------------------------------------------------------
-TEST_CASE("Virtual dispatch calls the correct override", "[t4]") {
-    Shape* a = new Circle(1.0);
-    Shape* b = new Rectangle(2.0, 5.0);
+    std::cout << "Total area: " << totalArea(shapes) << std::endl;
+    std::cout << "Largest:    " << largestShapeName(shapes) << std::endl;
 
-    REQUIRE(a->area() == Catch::Approx(3.14159265).epsilon(0.0001));
-    REQUIRE(b->area() == Catch::Approx(10.0));
-
-    delete a;
-    delete b;
-}
-
-// ------------------------------------------------------------
-// [t5] totalArea over a polymorphic container
-// ------------------------------------------------------------
-TEST_CASE("totalArea sums areas polymorphically", "[t5]") {
-    std::vector<Shape*> v;
-    v.push_back(new Rectangle(2.0, 3.0)); // 6
-    v.push_back(new Square(4.0));         // 16
-    REQUIRE(totalArea(v) == Catch::Approx(22.0));
-
-    std::vector<Shape*> empty;
-    REQUIRE(totalArea(empty) == Catch::Approx(0.0));
-
-    for (Shape* s : v) delete s;
-}
-
-// ------------------------------------------------------------
-// [t6] largestShapeName  (normal + empty edge case)
-// ------------------------------------------------------------
-TEST_CASE("largestShapeName finds the biggest shape", "[t6]") {
-    std::vector<Shape*> v;
-    v.push_back(new Circle(1.0));      // ~3.14
-    v.push_back(new Rectangle(2.0, 2.0)); // 4
-    v.push_back(new Square(10.0));     // 100
-    REQUIRE(largestShapeName(v) == "Square");
-
-    std::vector<Shape*> empty;
-    REQUIRE(largestShapeName(empty) == "");
-
-    for (Shape* s : v) delete s;
+    for (Shape* s : shapes) delete s;
+    return 0;
 }
